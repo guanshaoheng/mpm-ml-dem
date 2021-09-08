@@ -6,7 +6,7 @@
 
 # This method development is in the beginning stage. Your kind contribution will be warmly welcome.
 
-## Contact 
+# Contact 
 Guan Shaoheng 
 
 guanshaoheng@whu.edu.cn
