@@ -13,7 +13,7 @@ mu, lam = E / 2 / (1 + nu), E * nu / (1 + nu) / (1 - 2 * nu)  # Lame parameters
 ball_pos, ball_radius = ti.Vector([0.5, 0.0]), 0.32
 gravity = ti.Vector([0, -40])
 damping = 12.5
-print(ti.exp(-dt*damping))
+# print(ti.exp(-dt*damping))
 
 pos = ti.Vector.field(2, float, NV, needs_grad=True)
 vel = ti.Vector.field(2, float, NV)
@@ -51,12 +51,12 @@ def advance():
         vel[i] *= ti.exp(-dt * damping)
     for i in range(NV):
         # ball boundary condition:
-        disp = pos[i] - ball_pos
-        disp2 = disp.norm_sqr()
-        if disp2 <= ball_radius**2:
-            NoV = vel[i].dot(disp)
-            if NoV < 0:
-                vel[i] -= NoV * disp / disp2  # remove the normal component of the velocity vector
+        # disp = pos[i] - ball_pos
+        # disp2 = disp.norm_sqr()
+        # if disp2 <= ball_radius**2:
+        #     NoV = vel[i].dot(disp)
+        #     if NoV < 0:
+        #         vel[i] -= NoV * disp / disp2  # remove the normal component of the velocity vector
         # rect boundary condition:
         cond = (pos[i] < 0 and vel[i] < 0) or (pos[i] > 1 and vel[i] > 0)
         for j in ti.static(range(pos.n)):
@@ -69,7 +69,7 @@ def advance():
 def init_pos():
     for i, j in ti.ndrange(N + 1, N + 1):
         k = i * (N + 1) + j
-        pos[k] = ti.Vector([i, j]) / N * 0.25 + ti.Vector([0.35, 0.45])
+        pos[k] = ti.Vector([i, j]) / N * 0.25 + ti.Vector([0.45, 0.0])
         vel[k] = ti.Vector([0, 0])
     for i in range(NF):
         ia, ib, ic = f2v[i]
@@ -108,5 +108,5 @@ while gui.running:
             update_U()
         advance()
     gui.circles(pos.to_numpy(), radius=2, color=0xffaa33)
-    gui.circle(ball_pos, radius=ball_radius * 512, color=0x666666)
+    # gui.circle(ball_pos, radius=ball_radius * 512, color=0x666666)  # plot the rigid circle
     gui.show()
