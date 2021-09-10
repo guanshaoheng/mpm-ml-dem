@@ -30,7 +30,7 @@ def update_U():
         ia, ib, ic = f2v[i]
         a, b, c = pos[ia], pos[ib], pos[ic]
         V[i] = abs((a - c).cross(b - c))
-        D_i = ti.Matrix.cols([a - c, b - c])
+        D_i = ti.Matrix.cols([a - c, b - c])  # what is D_i
         F[i] = D_i @ B[i]
     for i in range(NF):
         F_i = F[i]
@@ -77,6 +77,10 @@ def init_pos():
 
 @ti.kernel
 def init_mesh():
+    """
+        triangle element used in this calculation
+    :return:
+    """
     for i, j in ti.ndrange(N, N):
         k = (i * N + j) * 2
         a = i * (N + 1) + j
