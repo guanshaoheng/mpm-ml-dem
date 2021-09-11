@@ -14,3 +14,10 @@ This method development is in the beginning stage. Your kind contribution will b
 Guan Shaoheng \
 Wuhan University\
 guanshaoheng@whu.edu.cn 
+
+
+# Documentation
+- The `ti.Tape(loss=y)` method is used to get the $dy/dx_i$
+is interpreted in the documentation file 
+[TapeExample01.py](./documentation/TapeExample01.py)
+and file [ad_gravity.py](./documentation/ad_gravity.py)
