@@ -69,7 +69,7 @@ def advance():
 def init_pos():
     for i, j in ti.ndrange(N + 1, N + 1):
         k = i * (N + 1) + j
-        pos[k] = ti.Vector([i, j]) / N * 0.25 + ti.Vector([0.35, 0.45])
+        pos[k] = ti.Vector([i, j]) / N * 0.25 + ti.Vector([0.45, 0.45])
         vel[k] = ti.Vector([0, 0])
     for i in range(NF):
         ia, ib, ic = f2v[i]
@@ -107,6 +107,8 @@ while gui.running:
         with ti.Tape(loss=U):
             update_U()
         advance()
+    # update_U()
+    # advance()
     gui.circles(pos.to_numpy(), radius=2, color=0xffaa33)
     gui.circle(ball_pos, radius=ball_radius * 512, color=0x666666)
     gui.show()
