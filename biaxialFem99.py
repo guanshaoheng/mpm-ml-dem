@@ -11,13 +11,16 @@ dx = 1 / N
 rho = 4e1
 NF = 2 * N ** 2  # number of faces
 NV = (N + 1) ** 2  # number of vertices
-E, nu = 4e4, 0.2  # Young's modulus and Poisson's ratio
+E, nu = 4e4, 0.4  # Young's modulus and Poisson's ratio
 mu, lam = E / 2 / (1 + nu), E * nu / (1 + nu) / (1 - 2 * nu)  # Lame parameters
+C1, D1 = mu/2., lam/2.
+third = 1./3.
 ball_pos, ball_radius = ti.Vector([0.5, 0.0]), 0.32
 gravity = -10  # -40
-# confining = 2e3
+# confining = 1e3
 confining = 0.
 damping = 12.5
+eye = ti.Matrix([[1., 0.], [0., 1.]])
 # print(ti.exp(-dt*damping)**30)
 
 pos = ti.Vector.field(2, float, NV, needs_grad=True)
@@ -34,7 +37,7 @@ uLoadMap = ti.Vector.field(2, float, NV)
 uMaskBottom = ti.Vector.field(2, int, NV)
 uMaskFixed = ti.Vector.field(2, int, NV)
 t = 0.
-du = -1e-9
+du = -1e-6
 pressureBoundary = ti.Vector.field(2, float, NV)
 
 @ti.kernel
@@ -48,11 +51,19 @@ def update_U():
         F[i] = D_i @ B[i]
     for i in range(NF):
         F_i = F[i]
-        log_J_i = ti.log(F_i.determinant())
-        phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2) - mu * log_J_i + lam / 2 * log_J_i ** 2
-        # phi_i -= mu * log_J_i
-        # phi_i += lam / 2 * log_J_i**2
-        phi[i] = phi_i
+        # # noe-hookean
+        # log_J_i = ti.log(F_i.determinant())
+        # phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2) - mu * log_J_i + lam / 2 * log_J_i ** 2
+        # phi[i] = phi_i
+        # U[None] += V[i] * phi_i
+
+        # ELASTIC
+        dsp_gradient = F_i - eye
+        epsilon_i = 0.5 * (dsp_gradient + dsp_gradient.transpose())
+        tr_epsilon = epsilon_i.trace()
+        stress_i = lam * eye * tr_epsilon + 2 * mu * epsilon_i
+        energy_i = stress_i * epsilon_i
+        phi_i = energy_i[0, 0] + energy_i[1, 1] + energy_i[1, 0] * 2.
         U[None] += V[i] * phi_i
 
 
@@ -77,13 +88,11 @@ def advance(iter: ti.i8):
             if cond[j]:
                 vel[i][j] = 0
         # add velocity constraint to the bottom and top nodes
-        if iter-1<0.:
+        if iter-1 < 0.:
             pos[i] = pos[i] + \
                      dt * vel[i] * (1.0 - (uMaskTop[i] + uMaskBottom[i])) * (1 - uMaskFixed[i])
-            # print(0)
         else:
             pos[i][1] = (pos[i][1]-originy)*0.999+originy
-            # pos[i] += du * uLoadMap[i]
 
 
 @ti.kernel
@@ -169,7 +178,7 @@ while gui.running:
         advance(0)  # iteration scope
         # print(0)
     advance(1)  # add displacement boundary condition
-    time.sleep(0.1)
+    # time.sleep(0.1)
     t += dt
     nstep += 1
     # print(nstep)

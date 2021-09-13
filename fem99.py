@@ -10,8 +10,11 @@ NF = 2 * N**2  # number of faces
 NV = (N + 1)**2  # number of vertices
 E, nu = 4e4, 0.2  # Young's modulus and Poisson's ratio
 mu, lam = E / 2 / (1 + nu), E * nu / (1 + nu) / (1 - 2 * nu)  # Lame parameters
+C1, D1 = mu/2., lam/2.
+third = 1/3.
 ball_pos, ball_radius = ti.Vector([0.5, 0.0]), 0.32
 gravity = ti.Vector([0, -40])
+eye = ti.Matrix([[1., 0.], [0., 1.]])
 damping = 12.5
 print(ti.exp(-dt*damping))
 
@@ -30,17 +33,31 @@ def update_U():
     for i in range(NF):
         ia, ib, ic = f2v[i]
         a, b, c = pos[ia], pos[ib], pos[ic]
-        V[i] = abs((a - c).cross(b - c))
+        V[i] = abs((a - c).cross(b - c))  # area of the element (face)
         D_i = ti.Matrix.cols([a - c, b - c])  # what is D_i
         F[i] = D_i @ B[i]
     for i in range(NF):
         F_i = F[i]
-        log_J_i = ti.log(F_i.determinant())
-        phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2)-mu*log_J_i + lam/2*log_J_i**2
-        # phi_i -= mu * log_J_i
-        # phi_i += lam / 2 * log_J_i**2
-        phi[i] = phi_i
+        # neo-hookean
+        # log_J_i = ti.log(F_i.determinant())
+        # phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2)-mu*log_J_i + lam/2*log_J_i**2
+        # # phi_i -= mu * log_J_i
+        # # phi_i += lam / 2 * log_J_i**2
+        # phi[i] = phi_i
+        # U[None] += V[i] * phi_i
+
+        # ELASTIC
+        dsp_gradient = F_i - eye
+        epsilon_i = 0.5*(dsp_gradient+dsp_gradient.transpose())
+        tr_epsilon = epsilon_i.trace()
+        I1 = (F_i.transpose() @ F_i).trace()
+        # stress_i = 4 * C1 * (epsilon_i - third * tr_epsilon * I1) + 2 * D1 * tr_epsilon * I1
+        stress_i = lam*eye*tr_epsilon+2*mu*epsilon_i
+        energy_i = stress_i * epsilon_i
+        phi_i = energy_i[0, 0]+energy_i[1, 1]+energy_i[1, 0]*2.
         U[None] += V[i] * phi_i
+        # print(i, stress_i[0, 0], stress_i[0, 1], stress_i[1, 0], stress_i[1, 1], '\t',
+        #       epsilon_i[0, 0], epsilon_i[0, 1], epsilon_i[1, 0], epsilon_i[1, 1], '\t', phi_i)
 
 
 @ti.kernel
