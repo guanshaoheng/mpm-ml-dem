@@ -39,23 +39,21 @@ def update_U():
     for i in range(NF):
         F_i = F[i]
         # neo-hookean
-        # log_J_i = ti.log(F_i.determinant())
-        # phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2)-mu*log_J_i + lam/2*log_J_i**2
-        # # phi_i -= mu * log_J_i
-        # # phi_i += lam / 2 * log_J_i**2
-        # phi[i] = phi_i
-        # U[None] += V[i] * phi_i
+        log_J_i = ti.log(F_i.determinant())
+        phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2)-mu*log_J_i + lam/2*log_J_i**2
+        # phi_i -= mu * log_J_i
+        # phi_i += lam / 2 * log_J_i**2
+        phi[i] = phi_i
+        U[None] += V[i] * phi_i
 
         # ELASTIC
-        dsp_gradient = F_i - eye
-        epsilon_i = 0.5*(dsp_gradient+dsp_gradient.transpose())
-        tr_epsilon = epsilon_i.trace()
-        I1 = (F_i.transpose() @ F_i).trace()
-        # stress_i = 4 * C1 * (epsilon_i - third * tr_epsilon * I1) + 2 * D1 * tr_epsilon * I1
-        stress_i = lam*eye*tr_epsilon+2*mu*epsilon_i
-        energy_i = stress_i * epsilon_i
-        phi_i = energy_i[0, 0]+energy_i[1, 1]+energy_i[1, 0]*2.
-        U[None] += V[i] * phi_i
+        # dsp_gradient = F_i - eye
+        # epsilon_i = 0.5*(dsp_gradient+dsp_gradient.transpose())
+        # tr_epsilon = epsilon_i.trace()
+        # stress_i = lam*eye*tr_epsilon+2*mu*epsilon_i
+        # energy_i = stress_i * epsilon_i
+        # phi_i = energy_i[0, 0]+energy_i[1, 1]+energy_i[1, 0]*2.
+        # U[None] += V[i] * phi_i
         # print(i, stress_i[0, 0], stress_i[0, 1], stress_i[1, 0], stress_i[1, 1], '\t',
         #       epsilon_i[0, 0], epsilon_i[0, 1], epsilon_i[1, 0], epsilon_i[1, 1], '\t', phi_i)
 

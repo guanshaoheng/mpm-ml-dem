@@ -5,7 +5,7 @@ ti.init(arch=ti.gpu)
 
 length = 0.25
 originx, originy = 0.45, 0.1
-N = 32
+N = 20
 dt = 1e-5
 dx = 1 / N
 rho = 4e1
@@ -52,19 +52,19 @@ def update_U():
     for i in range(NF):
         F_i = F[i]
         # # noe-hookean
-        # log_J_i = ti.log(F_i.determinant())
-        # phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2) - mu * log_J_i + lam / 2 * log_J_i ** 2
-        # phi[i] = phi_i
-        # U[None] += V[i] * phi_i
+        log_J_i = ti.log(F_i.determinant())
+        phi_i = mu / 2 * ((F_i.transpose() @ F_i).trace() - 2) - mu * log_J_i + lam / 2 * log_J_i ** 2
+        phi[i] = phi_i
+        U[None] += V[i] * phi_i
 
         # ELASTIC
-        dsp_gradient = F_i - eye
-        epsilon_i = 0.5 * (dsp_gradient + dsp_gradient.transpose())
-        tr_epsilon = epsilon_i.trace()
-        stress_i = lam * eye * tr_epsilon + 2 * mu * epsilon_i
-        energy_i = stress_i * epsilon_i
-        phi_i = energy_i[0, 0] + energy_i[1, 1] + energy_i[1, 0] * 2.
-        U[None] += V[i] * phi_i
+        # dsp_gradient = F_i - eye
+        # epsilon_i = 0.5 * (dsp_gradient + dsp_gradient.transpose())
+        # tr_epsilon = epsilon_i.trace()
+        # stress_i = lam * eye * tr_epsilon + 2 * mu * epsilon_i
+        # energy_i = stress_i * epsilon_i
+        # phi_i = energy_i[0, 0] + energy_i[1, 1] + energy_i[1, 0] * 2.
+        # U[None] += V[i] * phi_i
 
 
 @ti.kernel
@@ -147,7 +147,8 @@ def init_uMask():
     for i in range(NV):
         bottom = (pos[i][1] == miny)
         top = (pos[i][1] == maxy)
-        fix = (pos[i][1] == miny) and (abs(pos[i][0] - originx - length / 2.0) < length / 15)
+        # fix = (pos[i][1] == miny) and (abs(pos[i][0] - originx - length / 2.0) < length / 15)
+        fix = (top or bottom) and (abs(pos[i][0] - originx - length / 2.0) < length)
         if bottom:
             nBottom += 1
             uMaskBottom[i] = [0, 1]
@@ -172,7 +173,7 @@ while gui.running:
     #         gui.running = False
     #     elif e.key == 'r':
     #         init_pos()
-    for i in range(30):
+    for i in range(3):
         with ti.Tape(loss=U):
             update_U()
         advance(0)  # iteration scope
